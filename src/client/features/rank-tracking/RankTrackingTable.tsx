@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { Loader2, RefreshCw, Trash2 } from "lucide-react";
 import {
@@ -55,8 +55,14 @@ export function RankTrackingTable({
   const [showConfirm, setShowConfirm] = useState(false);
   const [showRescan, setShowRescan] = useState(false);
   const [rescanDepth, setRescanDepth] = useState(defaultSerpDepth);
+  const selectAnchorRef = useRef<string | null>(null);
 
-  const columns = useRankTrackingColumns(showDesktop, showMobile, domain);
+  const columns = useRankTrackingColumns(
+    showDesktop,
+    showMobile,
+    domain,
+    selectAnchorRef,
+  );
 
   const table = useReactTable({
     data: rows,
