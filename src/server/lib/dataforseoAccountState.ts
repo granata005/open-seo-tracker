@@ -24,6 +24,14 @@ const userDataResponseSchema = z
                       .string()
                       .nullable()
                       .optional(),
+                    money: z
+                      .object({
+                        balance: z.number().nullable().optional(),
+                        currency: z.string().nullable().optional(),
+                      })
+                      .passthrough()
+                      .nullable()
+                      .optional(),
                   })
                   .passthrough(),
               )
@@ -39,6 +47,8 @@ const userDataResponseSchema = z
 type DataforseoAccountState = {
   backlinksSubscriptionExpiryDate: string | null;
   llmMentionsSubscriptionExpiryDate: string | null;
+  moneyBalance: number | null;
+  moneyCurrency: string | null;
 };
 
 export function hasActiveDataforseoSubscription(
@@ -79,5 +89,8 @@ export async function fetchDataforseoAccountState(): Promise<DataforseoAccountSt
       result.backlinks_subscription_expiry_date ?? null,
     llmMentionsSubscriptionExpiryDate:
       result.llm_mentions_subscription_expiry_date ?? null,
+    moneyBalance:
+      typeof result.money?.balance === "number" ? result.money.balance : null,
+    moneyCurrency: result.money?.currency ?? null,
   };
 }

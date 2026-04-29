@@ -1,11 +1,12 @@
 import { useForm } from "@tanstack/react-form";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
   deleteAudit,
   getAuditHistory,
   startAudit,
 } from "@/serverFunctions/audit";
+import { DATAFORSEO_BALANCE_QUERY_KEY } from "@/client/lib/dataforseoBalanceKey";
 import {
   DEFAULT_LAUNCH_FORM_VALUES,
   MAX_PAGES_LIMIT,
@@ -110,6 +111,7 @@ function useLaunchMutations({
   projectId: string;
   historyRefetch: () => Promise<unknown>;
 }) {
+  const queryClient = useQueryClient();
   const startMutation = useMutation({
     mutationFn: (data: {
       projectId: string;
@@ -117,6 +119,11 @@ function useLaunchMutations({
       maxPages: number;
       lighthouseStrategy: "auto" | "none";
     }) => startAudit({ data }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({
+        queryKey: DATAFORSEO_BALANCE_QUERY_KEY,
+      });
+    },
   });
 
   const deleteMutation = useMutation({

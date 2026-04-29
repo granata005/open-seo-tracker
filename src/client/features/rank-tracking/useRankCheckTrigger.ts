@@ -3,6 +3,7 @@ import { toast } from "sonner";
 import { getStandardErrorMessage } from "@/client/lib/error-messages";
 import { captureClientEvent } from "@/client/lib/posthog";
 import { triggerRankCheck } from "@/serverFunctions/rank-tracking";
+import { DATAFORSEO_BALANCE_QUERY_KEY } from "@/client/lib/dataforseoBalanceKey";
 
 export function useRankCheckTrigger({
   configId,
@@ -31,6 +32,9 @@ export function useRankCheckTrigger({
       onSuccess();
       void queryClient.invalidateQueries({
         queryKey: ["rankTrackingLatestRun", projectId, configId],
+      });
+      void queryClient.invalidateQueries({
+        queryKey: DATAFORSEO_BALANCE_QUERY_KEY,
       });
       if (!result.ok) {
         toast.info("A rank check is already running");

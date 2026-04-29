@@ -1,6 +1,7 @@
 import { useRef } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getLatestRankRun } from "@/serverFunctions/rank-tracking";
+import { DATAFORSEO_BALANCE_QUERY_KEY } from "@/client/lib/dataforseoBalanceKey";
 
 /**
  * Polls the latest rank check run for a config, auto-refreshing results
@@ -25,6 +26,9 @@ export function useRankRunPolling(projectId: string, configId: string) {
       if (wasActive && isTerminal) {
         void queryClient.invalidateQueries({
           queryKey: ["rankTrackingResults", projectId, configId],
+        });
+        void queryClient.invalidateQueries({
+          queryKey: DATAFORSEO_BALANCE_QUERY_KEY,
         });
       }
 

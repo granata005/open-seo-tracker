@@ -1,12 +1,15 @@
 import * as React from "react";
 import { Link, useLocation } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import {
   ChevronDown,
   ChevronsUpDown,
   CircleHelp,
   CreditCard,
+  Loader2,
   Menu,
   User,
+  Wallet,
 } from "lucide-react";
 import {
   AppContent,
@@ -19,6 +22,8 @@ import { signOutAndRedirect, useSession } from "@/lib/auth-client";
 import { isHostedClientAuthMode } from "@/lib/auth-mode";
 import { BILLING_ROUTE } from "@/shared/billing";
 import { getSeoApiKeyStatus } from "@/serverFunctions/config";
+import { getDataforseoBalance } from "@/serverFunctions/dataforseoBalance";
+import { DATAFORSEO_BALANCE_QUERY_KEY } from "@/client/lib/dataforseoBalanceKey";
 
 const DATAFORSEO_HELP_PATH = "/help/dataforseo-api-key";
 const SUPPORT_PATH = "/support";
@@ -259,6 +264,7 @@ function TopNav({
       <div className="flex-1" />
 
       <div className="hidden flex-none items-center gap-2 md:flex">
+        <DataforseoBalanceIndicator />
         <div className="tooltip tooltip-bottom" data-tip="Help & Community">
           <Link
             to={SUPPORT_PATH}
@@ -294,6 +300,89 @@ function TopNav({
       </div>
 
       <AccountMenu mobileOnly />
+    </div>
+  );
+}
+
+function formatBalance(balance: number, currency: string | null): string {
+  const safeCurrency =
+    currency && /^[A-Z]{3}$/.test(currency) ? currency : "USD";
+  try {
+    return new Intl.NumberFormat(undefined, {
+      style: "currency",
+      currency: safeCurrency,
+      maximumFractionDigits: 2,
+    }).format(balance);
+  } catch {
+    return `${balance.toFixed(2)} ${safeCurrency}`;
+  }
+}
+
+function DataforseoBalanceIndicator() {
+  // In hosted mode the platform's DataForSEO account is shared, so the user's
+  // own balance isn't meaningful. The server function short-circuits, but we
+  // also skip the request entirely on the client.
+  const enabled = !isHostedClientAuthMode();
+
+  const query = useQuery({
+    queryKey: DATAFORSEO_BALANCE_QUERY_KEY,
+    queryFn: () => getDataforseoBalance(),
+    refetchInterval: enabled ? 60_000 : false,
+    staleTime: 30_000,
+    refetchOnWindowFocus: enabled,
+    enabled,
+  });
+
+  if (!enabled) return null;
+
+  const data = query.data;
+  const isFetching = query.isFetching;
+
+  let label: React.ReactNode;
+  let tooltip: string;
+  let isError = false;
+
+  if (query.isLoading && !data) {
+    label = <span className="text-base-content/40">…</span>;
+    tooltip = "Loading DataForSEO balance";
+  } else if (data?.available && data.balance !== null) {
+    label = (
+      <span className="font-mono tabular-nums">
+        {formatBalance(data.balance, data.currency)}
+      </span>
+    );
+    tooltip = `DataForSEO balance · click to refresh${
+      data.fetchedAt
+        ? ` · updated ${new Date(data.fetchedAt).toLocaleTimeString()}`
+        : ""
+    }`;
+  } else if (data && !data.available && data.errorMessage) {
+    label = <span className="text-base-content/40">—</span>;
+    tooltip = `DataForSEO balance unavailable: ${data.errorMessage}`;
+    isError = true;
+  } else {
+    label = <span className="text-base-content/40">—</span>;
+    tooltip = "DataForSEO balance unavailable";
+  }
+
+  return (
+    <div className="tooltip tooltip-bottom" data-tip={tooltip}>
+      <button
+        type="button"
+        onClick={() => query.refetch()}
+        disabled={isFetching}
+        className={`btn btn-ghost btn-sm gap-1.5 px-2.5 normal-case ${
+          isError ? "text-warning" : "text-base-content/70"
+        } ${isFetching ? "opacity-70" : ""}`}
+        aria-label="DataForSEO balance — click to refresh"
+      >
+        {isFetching ? (
+          <Loader2 className="size-3.5 animate-spin" />
+        ) : (
+          <Wallet className="size-3.5" />
+        )}
+        {label}
+      </button>
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import { toast } from "sonner";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { refreshTrackingKeywordMetrics } from "@/serverFunctions/rank-tracking";
+import { DATAFORSEO_BALANCE_QUERY_KEY } from "@/client/lib/dataforseoBalanceKey";
 
 export function useMetricsRefresh(projectId: string, configId: string) {
   const queryClient = useQueryClient();
@@ -12,6 +13,9 @@ export function useMetricsRefresh(projectId: string, configId: string) {
     onSuccess: (result) => {
       void queryClient.invalidateQueries({
         queryKey: ["rankTrackingResults", projectId, configId],
+      });
+      void queryClient.invalidateQueries({
+        queryKey: DATAFORSEO_BALANCE_QUERY_KEY,
       });
       toast.success(`Metrics updated for ${result.updated} keywords`);
     },
